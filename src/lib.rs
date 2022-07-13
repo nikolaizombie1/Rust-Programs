@@ -154,6 +154,16 @@ pub fn create_plex_format_folder_and_move(newname: String, season: usize) {
     }
 }
 
+pub fn create_filtered_entries(entries: Vec<(WDirentry, String, String)>,ranges: Vec<usize>) -> Vec<(WDirentry, String, String)> {
+    let mut retvec: Vec<(WDirentry,String,String)> = Vec::new();
+    for (index,entry) in entries.iter().enumerate() {
+       if ranges.contains(&(index+1)) {
+            retvec.push(entry.clone());
+       }
+    }
+    retvec
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
