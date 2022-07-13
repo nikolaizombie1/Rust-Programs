@@ -1,5 +1,6 @@
 use natord;
 use std::collections::HashSet;
+use std::vec;
 use walkdir::WalkDir;
 use walkdir::DirEntry as WDirentry;
 use std::path::Path;
@@ -16,6 +17,10 @@ pub fn create_sorted_file_entries(path: &Path) -> Vec<(WDirentry,String)> {
     let mut fileentries: Vec<(WDirentry,String)> = Vec::new();
     for file in files {
         fileentries.push((file.clone(),String::from(file.file_name().to_str().unwrap())));
+    }
+    if fileentries.len() == 0 {
+        eprintln!("Directory is empty");
+        std::process::exit(1)
     }
     fileentries.sort_by(|a,b| natord::compare(&a.1.to_lowercase(), &b.1.to_lowercase()));
     fileentries
@@ -34,10 +39,14 @@ pub fn accept_and_validate_new_name() -> String {
     buffer
 }
 
-pub fn accept_and_validate_range_string() -> Vec<String> {
-    let re = regex::Regex::new(r"^\d+-\d+\d*$|^(\d,)+\d*$|^\d+$").unwrap();
+pub fn accept_and_validate_range_string(entries: Vec<(WDirentry,String)>) -> Vec<String> {
     let mut buffer = String::new();
     io::stdin().read_line(&mut buffer).expect("Error reading from ");
+    if buffer.chars().nth(0).unwrap() == '\n' {
+        let retstring = format!("1-{}",entries.len());
+        return vec![retstring]
+    }
+    let re = regex::Regex::new(r"^\d+-\d+\d*$|^(\d,)+\d*$|^\d+$").unwrap();
     let ranges: Vec<&str> = buffer.split_ascii_whitespace().collect();
     let ranges = ranges.iter().filter(|range| re.is_match(range));
     let mut retvec: Vec<String> = Vec::new();
@@ -76,12 +85,16 @@ pub fn create_int_list(ranges: Vec<String>) -> Vec<usize> {
     parsedrange
 }
 
+pub fn is_range_ok() -> bool {
+    false
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
     fn parses_range_correctly() {
-        let mut inputs: Vec<String> = vec![
+        let inputs: Vec<String> = vec![
             String::from("webfhbewhfbh"),
             String::from("1-5"),
             String::from("ehjfwjbebw1-5jfenwjfe"),
@@ -97,5 +110,9 @@ mod tests {
         let correctanswer: Vec<usize> = vec![1,2,3,4,5,6,7,8];
         let answer = create_int_list(inputs);
         assert_eq!(correctanswer,answer);
+    }
+    #[test]
+    fn verify_ranges_correctly() {
+        
     } 
 }
