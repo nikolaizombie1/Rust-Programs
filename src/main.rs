@@ -20,7 +20,7 @@ fn main() {
     println!("#     WARNING: Renaming the files is permanent    #");
     println!("###################################################");
     println!("Would you like to proceed:?[y/n]");
-    let reyn = regex::Regex::new(r"([Yy]{1}[Ee]{0,1}[Ss]{0,1})$").unwrap();
+    let reyn = regex::Regex::new(r"([Yy]{1}[Ee]{0,1}[Ss]{0,1})").unwrap();
     let mut yn: String = String::new();
     std::io::stdin().read_line(&mut yn).expect("Error reading stdin");
     if !reyn.is_match(&yn) {
