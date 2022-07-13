@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 walkdir = "2"
 natord = "1.0.9"
+regex = "1.6.0"
