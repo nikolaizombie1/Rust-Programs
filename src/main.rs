@@ -24,7 +24,7 @@ fn main() {
     let mut yn: String = String::new();
     std::io::stdin().read_line(&mut yn).expect("Error reading stdin");
     if !reyn.is_match(&yn) {
-        println!("Script executed succesfully");
+        println!("Script clossed succesfully");
         std::process::exit(0)
     }
     pf::rename_files(filtered_entries.clone(), newname.clone(), season.clone());
