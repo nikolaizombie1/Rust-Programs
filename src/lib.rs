@@ -1,7 +1,7 @@
 use natord;
 use regex;
-use std::{io,fs,path::Path,vec,collections::HashSet};
-use walkdir::{WalkDir,DirEntry as WDirentry};
+use std::{collections::HashSet, fs, io, path::Path, vec};
+use walkdir::{DirEntry as WDirentry, WalkDir};
 pub fn create_sorted_file_entries(path: &Path) -> Vec<(WDirentry, String, String)> {
     let entries = WalkDir::new(path)
         .max_depth(1)
@@ -39,7 +39,7 @@ pub fn create_sorted_file_entries(path: &Path) -> Vec<(WDirentry, String, String
 
 pub fn accept_and_validate_new_name(name: String) -> String {
     if !name.is_empty() && !name.contains('/') {
-        return name
+        return name;
     }
     let mut buffer = String::new();
     io::stdin()
@@ -114,10 +114,18 @@ pub fn is_range_ok(len: usize, ranges: Vec<usize>) -> bool {
     true
 }
 
-pub fn preview_changes(entries: Vec<(WDirentry, String, String)>,newname: String,season: usize) {
+pub fn preview_changes(entries: Vec<(WDirentry, String, String)>, newname: String, season: usize) {
     let entries_iter = entries.iter();
-    for (index,entry) in entries_iter.enumerate() {
-        let output = format!("{}. {} ----> {} S{}E{}.{}",index+1,entry.1,newname.trim_end(),season,index+1,entry.2);
+    for (index, entry) in entries_iter.enumerate() {
+        let output = format!(
+            "{}. {} ----> {} S{}E{}.{}",
+            index + 1,
+            entry.1,
+            newname.trim_end(),
+            season,
+            index + 1,
+            entry.2
+        );
         println!("{output}");
     }
 }
@@ -129,38 +137,47 @@ pub fn ask_for_season_and_validate() -> usize {
             .read_line(&mut season)
             .expect("Error reading from ");
         let season: usize = match season.trim().parse() {
-           Ok(num) => num,
-           Err(_) => continue, 
+            Ok(num) => num,
+            Err(_) => continue,
         };
-        return season
+        return season;
     }
 }
 
-pub fn rename_files(entries: Vec<(WDirentry, String, String)>,newname: String,season: usize) {
+pub fn rename_files(entries: Vec<(WDirentry, String, String)>, newname: String, season: usize) {
     let entries_iter = entries.iter();
-    for (index,entry) in entries_iter.enumerate() {
-        let name = format!("{} S{}E{}.{}",newname.trim_end(),season,index+1,entry.2);
+    for (index, entry) in entries_iter.enumerate() {
+        let name = format!(
+            "{} S{}E{}.{}",
+            newname.trim_end(),
+            season,
+            index + 1,
+            entry.2
+        );
         fs::rename(entry.1.clone(), name).expect("Error renaming files");
     }
 }
 
 pub fn create_plex_format_folder_and_move(newname: String, season: usize) {
     let newfiles = create_sorted_file_entries(std::env::current_dir().unwrap().as_path());
-    let path = format!("{}/Season {}/",newname.trim_end(),season);
+    let path = format!("{}/Season {}/", newname.trim_end(), season);
     fs::create_dir_all(path).expect("Error creating plex directory");
-    let path = format!("{}/Season {}/",newname.trim_end(),season);
+    let path = format!("{}/Season {}/", newname.trim_end(), season);
     for file in newfiles {
-        let path_copy = format!("{}{}",&path,file.1);
+        let path_copy = format!("{}{}", &path, file.1);
         fs::rename(file.1, path_copy).expect("Error moving file");
     }
 }
 
-pub fn create_filtered_entries(entries: Vec<(WDirentry, String, String)>,ranges: Vec<usize>) -> Vec<(WDirentry, String, String)> {
-    let mut retvec: Vec<(WDirentry,String,String)> = Vec::new();
-    for (index,entry) in entries.iter().enumerate() {
-       if ranges.contains(&(index+1)) {
+pub fn create_filtered_entries(
+    entries: Vec<(WDirentry, String, String)>,
+    ranges: Vec<usize>,
+) -> Vec<(WDirentry, String, String)> {
+    let mut retvec: Vec<(WDirentry, String, String)> = Vec::new();
+    for (index, entry) in entries.iter().enumerate() {
+        if ranges.contains(&(index + 1)) {
             retvec.push(entry.clone());
-       }
+        }
     }
     retvec
 }
