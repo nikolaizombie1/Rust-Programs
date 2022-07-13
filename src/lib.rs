@@ -1,11 +1,7 @@
 use natord;
 use regex;
-use std::collections::HashSet;
-use std::io;
-use std::path::Path;
-use std::vec;
-use walkdir::DirEntry as WDirentry;
-use walkdir::WalkDir;
+use std::{io,fs,path::Path,vec,collections::HashSet};
+use walkdir::{WalkDir,DirEntry as WDirentry};
 pub fn create_sorted_file_entries(path: &Path) -> Vec<(WDirentry, String, String)> {
     let entries = WalkDir::new(path)
         .max_depth(1)
@@ -139,6 +135,25 @@ pub fn ask_for_season_and_validate() -> usize {
     }
 }
 
+pub fn rename_files(entries: Vec<(WDirentry, String, String)>,newname: String,season: usize) {
+    let entries_iter = entries.iter();
+    for (index,entry) in entries_iter.enumerate() {
+        let name = format!("{newname} S{season}E{}.{}",index+1,entry.2);
+        fs::rename(entry.1.clone(), name).expect("Error renaming files");
+    }
+}
+
+pub fn create_plex_format_folder_and_move(newname: String, season: usize) {
+    let newfiles = create_sorted_file_entries(std::env::current_dir().unwrap().as_path());
+    let path = format!("{}/Season {}/",newname,season);
+    fs::create_dir_all(path).expect("Error creating plex directory");
+    let path = format!("{}/Season {}/",newname,season);
+    for file in newfiles {
+        let path_copy = format!("{}{}",&path,file.1);
+        fs::rename(file.1, path_copy).expect("Error moving file");
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -161,8 +176,4 @@ mod tests {
         let answer = create_int_list(inputs);
         assert_eq!(correctanswer, answer);
     }
-    //#[test]
-    //fn verify_name() {
-    //    assert_eq!(String::from("Fate Extra\n"),accept_and_validate_new_name(String::from("")));
-    //}
 }
