@@ -2,6 +2,7 @@ use natord;
 use regex;
 use std::{collections::HashSet, fs, io, path::Path, vec};
 use walkdir::{DirEntry as WDirentry, WalkDir};
+use colored::*;
 pub fn create_sorted_file_entries(path: &Path) -> Vec<(WDirentry, String, String)> {
     let entries = WalkDir::new(path)
         .max_depth(1)
@@ -118,13 +119,18 @@ pub fn preview_changes(entries: Vec<(WDirentry, String, String)>, newname: Strin
     let entries_iter = entries.iter();
     for (index, entry) in entries_iter.enumerate() {
         let output = format!(
-            "{}. {} ----> {} S{}E{}.{}",
-            index + 1,
-            entry.1,
-            newname.trim_end(),
-            season,
-            index + 1,
-            entry.2
+            "{}{} {} {} {} {}{}{}{}{}{}",
+            (index + 1).to_string().bright_cyan(),      
+            String::from(".").bright_cyan(),
+            entry.1.bright_white(),
+            String::from("--->").bright_green(),
+            newname.trim_end().bright_red(),
+            String::from("S").bright_red(),
+            season.to_string().bright_yellow(),
+            String::from("E").bright_red(),
+            (index + 1).to_string().bright_magenta(),
+            String::from(".").bright_white(),
+            entry.2.bright_red()
         );
         println!("{output}");
     }

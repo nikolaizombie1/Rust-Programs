@@ -1,4 +1,5 @@
 use plexformatter as pf;
+use colored::*;
 fn main() {
     println!("Input the new name you would the files to be called: ");
     let newname = pf::accept_and_validate_new_name(String::from(""));
@@ -17,9 +18,11 @@ fn main() {
     let filtered_entries = pf::create_filtered_entries(entries.clone(), unfilteredranges);
     println!("Here is preview of the filtered files");
     pf::preview_changes(filtered_entries.clone(), newname.clone(), season.clone());
-    println!("###################################################");
-    println!("#     WARNING: Renaming the files is permanent    #");
-    println!("###################################################");
+    let hashes = "###################################################";
+    let warning = "#     WARNING: Renaming the files is permanent    #";
+    println!("{}",hashes.bright_red());
+    println!("{}",warning.bright_red());
+    println!("{}",hashes.bright_red());
     println!("Would you like to proceed:?[y/n]");
     let reyn = regex::Regex::new(r"([Yy]{1}[Ee]{0,1}[Ss]{0,1})").unwrap();
     let mut yn: String = String::new();
