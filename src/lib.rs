@@ -3,6 +3,15 @@ use regex;
 use std::{collections::HashSet, fs, io, path::Path, vec};
 use walkdir::{DirEntry as WDirentry, WalkDir};
 use colored::*;
+/// Creates a Vector<(walkdir::DirEntry,String,String)> given a path.
+/// The touple consists of the DirEntry from the walkdir crate in the 0th field, the name of the file in the 1st field and the extention of the file 2nd field.
+/// The Vector is sorted by the name of the file in a natural sorted order.
+/// # Examples
+/// 
+/// ```
+/// let path = std::env::current_dir().unwrap();
+/// let fileentries = plexformatter::create_sorted_file_entries(path.as_path());
+/// ```
 pub fn create_sorted_file_entries(path: &Path) -> Vec<(WDirentry, String, String)> {
     let entries = WalkDir::new(path)
         .max_depth(1)
