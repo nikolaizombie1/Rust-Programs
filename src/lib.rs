@@ -1,13 +1,15 @@
+//! This is the library file for the plexformatter crate. It contains the methods used in the main file for plexformatter.
+use colored::*;
 use natord;
 use regex;
 use std::{collections::HashSet, fs, io, path::Path, vec};
 use walkdir::{DirEntry as WDirentry, WalkDir};
-use colored::*;
 /// Creates a Vector<(walkdir::DirEntry,String,String)> given a path.
 /// The touple consists of the DirEntry from the walkdir crate in the 0th field, the name of the file in the 1st field and the extention of the file 2nd field.
 /// The Vector is sorted by the name of the file in a natural sorted order.
+/// The search will only look for files in the current directory, meaning it will not look for files in subdirectories.
 /// # Examples
-/// 
+///
 /// ```
 /// let path = std::env::current_dir().unwrap();
 /// let fileentries = plexformatter::create_sorted_file_entries(path.as_path());
@@ -47,6 +49,17 @@ pub fn create_sorted_file_entries(path: &Path) -> Vec<(WDirentry, String, String
     fileentries
 }
 
+/// Validates a name so that it can be a valid file name under linux, i.e does not contain "/" character. 
+/// Given a name that does not contain "/" character and is not an empty string, it returns the name without further input.
+/// If an invalid name is passed as a parameter it will create a stdin prompt that will then verify the input again.
+/// 
+/// # Examples
+/// 
+/// ```
+/// let name = String::from("The Simpsons");
+/// assert_eq!(
+/// String::from("The Simpsons"),plexformatter::accept_and_validate_new_name(name));
+/// ```
 pub fn accept_and_validate_new_name(name: String) -> String {
     if !name.is_empty() && !name.contains('/') {
         return name;
@@ -69,6 +82,19 @@ pub fn accept_and_validate_new_name(name: String) -> String {
     buffer
 }
 
+/// The method accepts a Vector<(walkdir::DirEntry,String,String)> created by the plexformatter::create_sorted_file_entries method as a parameter and it will prompt the user to choose a range of entries from the Vector.
+/// Invalid inputs will not be added to the vector and if all entries are invalid it will return an empty vector.
+/// Valid formats for selecting the entries are:
+/// 1. Number-Number (IE 1-5)
+/// 2. Comma seperated values (1,2,3,4,5)
+/// 3. Single values seperated by a space (1 2 3 4 5)
+/// 
+/// # Examples
+/// ```
+/// let path = std::env::current_dir().unwrap();
+/// let fileentries = plexformatter::create_sorted_file_entries(path.as_path());
+/// //plexformatter::accept_and_validate_range_string(fileentries); (Added as comment to pass Doctest)
+/// ```
 pub fn accept_and_validate_range_string(entries: Vec<(WDirentry, String, String)>) -> Vec<String> {
     let mut buffer = String::new();
     io::stdin()
@@ -88,7 +114,16 @@ pub fn accept_and_validate_range_string(entries: Vec<(WDirentry, String, String)
     retvec
 }
 
-pub fn create_int_list(ranges: Vec<String>) -> Vec<usize> {
+/// Given the Vec<String> created and validated by the plexformatter::accept_and_validate_range_string method and returns a Vec<usize> based on the ranges inputed by the user.
+/// 
+/// # Examples
+/// ```
+/// let ranges: Vec<String> = vec![String::from("1-5")];
+/// let intvec: Vec<usize> = plexformatter::create_int_vec(ranges);
+/// let test: Vec<usize> = vec![1,2,3,4,5];
+/// assert_eq!(test,intvec);
+/// ```
+pub fn create_int_vec(ranges: Vec<String>) -> Vec<usize> {
     let rerange = regex::Regex::new(r"^\d+-\d+\d*$").unwrap();
     let recsv = regex::Regex::new(r"^(\d,)+\d*$").unwrap();
     let resingle = regex::Regex::new(r"^\d+$").unwrap();
@@ -115,6 +150,15 @@ pub fn create_int_list(ranges: Vec<String>) -> Vec<usize> {
     parsedrange
 }
 
+/// Given the length of the vector created by the plexformatter::create_sorted_file_entries method and the vector created by the plexformatter::create_int_vec
+/// it will verify that the numbers inside are not less than 1 and not more than the length of the entries vector.
+/// 
+/// # Examples
+/// ```
+/// let ranges: Vec<usize> = vec![1,2,3,4,5];
+/// let ok_range: bool = plexformatter::is_range_ok(5,ranges);
+/// assert!(ok_range);
+/// ```
 pub fn is_range_ok(len: usize, ranges: Vec<usize>) -> bool {
     for range in ranges {
         if range > len || range < 1 {
@@ -124,12 +168,57 @@ pub fn is_range_ok(len: usize, ranges: Vec<usize>) -> bool {
     true
 }
 
+/// Asks the user through stdin a season number in the form of an unsigned integer.
+/// If an invalid input is provided, it will prompt the user to input the unsigned integer again.
+pub fn ask_for_season_and_validate() -> usize {
+    loop {
+        let mut season: String = String::new();
+        io::stdin()
+            .read_line(&mut season)
+            .expect("Error reading from stdin");
+        let season: usize = match season.trim().parse() {
+            Ok(num) => num,
+            Err(_) => continue,
+        };
+        return season;
+    }
+}
+
+
+
+/// Given a vector created by the plexformatter::create_sorted_file_entries 
+/// and a vector created by the plexformatter::create_int_vec,
+/// it will create a new Vec<(walkdir::DireEntry, String, String)> that will contain the entries selected by the user defined ranges.
+/// # Example
+/// ```
+/// let path = std::env::current_dir().unwrap();
+/// let files = plexformatter::create_sorted_file_entries(path.as_path());
+/// let ranges: Vec<usize> = vec![1,2,3,4,5];
+/// let filteredvec = plexformatter::create_filtered_entries(files,ranges);
+/// ```
+pub fn create_filtered_entries(
+    entries: Vec<(WDirentry, String, String)>,
+    ranges: Vec<usize>,
+) -> Vec<(WDirentry, String, String)> {
+    let mut retvec: Vec<(WDirentry, String, String)> = Vec::new();
+    for (index, entry) in entries.iter().enumerate() {
+        if ranges.contains(&(index + 1)) {
+            retvec.push(entry.clone());
+        }
+    }
+    retvec
+}
+
+/// Given a vector created by the plexformatter::create_sorted_file_entries or plexformatter:create_filtered_entries,
+/// a verified name string from the plexformatter::accept_and_validate_new_name
+/// and a verified season from the plexformatter::ask_for_season_and_validate,
+/// it will do a dry run of the files by displaying the changes to the user.
 pub fn preview_changes(entries: Vec<(WDirentry, String, String)>, newname: String, season: usize) {
     let entries_iter = entries.iter();
     for (index, entry) in entries_iter.enumerate() {
         let output = format!(
             "{}{} {} {} {} {}{}{}{}{}{}",
-            (index + 1).to_string().bright_cyan(),      
+            (index + 1).to_string().bright_cyan(),
             String::from(".").bright_cyan(),
             entry.1.bright_white(),
             String::from("--->").bright_green(),
@@ -145,20 +234,10 @@ pub fn preview_changes(entries: Vec<(WDirentry, String, String)>, newname: Strin
     }
 }
 
-pub fn ask_for_season_and_validate() -> usize {
-    loop {
-        let mut season: String = String::new();
-        io::stdin()
-            .read_line(&mut season)
-            .expect("Error reading from ");
-        let season: usize = match season.trim().parse() {
-            Ok(num) => num,
-            Err(_) => continue,
-        };
-        return season;
-    }
-}
-
+/// Given a vector created by the plexformatter::create_sorted_file_entries or plexformatter:create_filtered_entries,
+/// a verified name string from the plexformatter::accept_and_validate_new_name
+/// and a verified season from the plexformatter::ask_for_season_and_validate,
+/// It will rename the files in the current directory not changing the directory the files are files are located.
 pub fn rename_files(entries: Vec<(WDirentry, String, String)>, newname: String, season: usize) {
     let entries_iter = entries.iter();
     for (index, entry) in entries_iter.enumerate() {
@@ -173,6 +252,9 @@ pub fn rename_files(entries: Vec<(WDirentry, String, String)>, newname: String, 
     }
 }
 
+/// Given the the name created by the plexformatter::accept_and_validate_new_name
+/// and the season from plexformatter::ask_for_season_and_validate
+/// it will create 2 now folders: The parent folder will have the name of the newname and a subfolder with the name "Season "and the season number appended to it.
 pub fn create_plex_format_folder_and_move(newname: String, season: usize) {
     let newfiles = create_sorted_file_entries(std::env::current_dir().unwrap().as_path());
     let path = format!("{}/Season {}/", newname.trim_end(), season);
@@ -184,18 +266,6 @@ pub fn create_plex_format_folder_and_move(newname: String, season: usize) {
     }
 }
 
-pub fn create_filtered_entries(
-    entries: Vec<(WDirentry, String, String)>,
-    ranges: Vec<usize>,
-) -> Vec<(WDirentry, String, String)> {
-    let mut retvec: Vec<(WDirentry, String, String)> = Vec::new();
-    for (index, entry) in entries.iter().enumerate() {
-        if ranges.contains(&(index + 1)) {
-            retvec.push(entry.clone());
-        }
-    }
-    retvec
-}
 
 #[cfg(test)]
 mod tests {
@@ -216,7 +286,7 @@ mod tests {
             String::from("1aas-b--c"),
         ];
         let correctanswer: Vec<usize> = vec![1, 2, 3, 4, 5, 6, 7, 8];
-        let answer = create_int_list(inputs);
+        let answer = create_int_vec(inputs);
         assert_eq!(correctanswer, answer);
     }
 }

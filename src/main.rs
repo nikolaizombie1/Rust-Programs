@@ -10,7 +10,7 @@ fn main() {
     pf::preview_changes(entries.clone(), newname.clone(), season.clone());
     println!("Select a range of files that you would like to edit: ");
     let unfilteredranges =
-        pf::create_int_list(pf::accept_and_validate_range_string(entries.clone()));
+        pf::create_int_vec(pf::accept_and_validate_range_string(entries.clone()));
     if !pf::is_range_ok(entries.clone().len(), unfilteredranges.clone()) {
         eprintln!("Invalid inputed range");
         std::process::exit(1)
