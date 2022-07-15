@@ -1,7 +1,7 @@
 # rplexformatter
 
 ## Description
-This tool allows you to batch rename files into a format recognized by Plex Media Server.I
+This tool allows you to batch rename files into a format recognized by Plex Media Server.
 
 ## Instalation
 - Go to the [releases](https://github.com/nikolaizombie1/rplexformatter/releases) and download the latest release.
