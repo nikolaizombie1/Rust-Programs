@@ -2,8 +2,14 @@
 use colored::*;
 use natord;
 use regex;
-use std::{collections::HashSet, fs, io, path::Path, vec};
+use std::{collections::HashSet, fs::{self}, io, path::Path, vec};
 use walkdir::{DirEntry as WDirentry, WalkDir};
+#[derive(Clone)]
+/// Contains the name of the files as String an the extention as String.
+pub struct FileEntry {
+    name: String,
+    extention: String,
+}
 /// Creates a Vector<(walkdir::DirEntry,String,String)> given a path.
 /// The touple consists of the DirEntry from the walkdir crate in the 0th field, the name of the file in the 1st field and the extention of the file 2nd field.
 /// The Vector is sorted by the name of the file in a natural sorted order.
@@ -14,7 +20,7 @@ use walkdir::{DirEntry as WDirentry, WalkDir};
 /// let path = std::env::current_dir().unwrap();
 /// let fileentries = plexformatter::create_sorted_file_entries(path.as_path());
 /// ```
-pub fn create_sorted_file_entries(path: &Path) -> Vec<(WDirentry, String, String)> {
+pub fn create_sorted_file_entries(path: &Path) -> Vec<FileEntry> {
     let entries = WalkDir::new(path)
         .max_depth(1)
         .into_iter()
@@ -25,7 +31,7 @@ pub fn create_sorted_file_entries(path: &Path) -> Vec<(WDirentry, String, String
             files.push(file);
         }
     }
-    let mut fileentries: Vec<(WDirentry, String, String)> = Vec::new();
+    let mut fileentries: Vec<FileEntry> = Vec::new();
     for file in files {
         let extention = String::from(
             file.file_name()
@@ -35,17 +41,15 @@ pub fn create_sorted_file_entries(path: &Path) -> Vec<(WDirentry, String, String
                 .last()
                 .unwrap(),
         );
-        fileentries.push((
-            file.clone(),
-            String::from(file.file_name().to_str().unwrap()),
-            extention,
-        ));
+        fileentries.push(
+            FileEntry {  name: (String::from(file.file_name().to_str().unwrap())), extention: (extention) }
+        );
     }
     if fileentries.len() == 0 {
         eprintln!("Directory is empty");
         std::process::exit(1)
     }
-    fileentries.sort_by(|a, b| natord::compare(&a.1.to_lowercase(), &b.1.to_lowercase()));
+    fileentries.sort_by(|a, b| natord::compare(&a.name.to_lowercase(), &b.name.to_lowercase()));
     fileentries
 }
 
@@ -95,7 +99,7 @@ pub fn accept_and_validate_new_name(name: String) -> String {
 /// let fileentries = plexformatter::create_sorted_file_entries(path.as_path());
 /// //plexformatter::accept_and_validate_range_string(fileentries); (Added as comment to pass Doctest)
 /// ```
-pub fn accept_and_validate_range_string(entries: Vec<(WDirentry, String, String)>) -> Vec<String> {
+pub fn accept_and_validate_range_string(entries: Vec<FileEntry>) -> Vec<String> {
     let mut buffer = String::new();
     io::stdin()
         .read_line(&mut buffer)
@@ -197,10 +201,10 @@ pub fn ask_for_season_and_validate() -> usize {
 /// let filteredvec = plexformatter::create_filtered_entries(files,ranges);
 /// ```
 pub fn create_filtered_entries(
-    entries: Vec<(WDirentry, String, String)>,
+    entries: Vec<FileEntry>,
     ranges: Vec<usize>,
-) -> Vec<(WDirentry, String, String)> {
-    let mut retvec: Vec<(WDirentry, String, String)> = Vec::new();
+) -> Vec<FileEntry> {
+    let mut retvec: Vec<FileEntry> = Vec::new();
     for (index, entry) in entries.iter().enumerate() {
         if ranges.contains(&(index + 1)) {
             retvec.push(entry.clone());
@@ -213,14 +217,14 @@ pub fn create_filtered_entries(
 /// a verified name string from the plexformatter::accept_and_validate_new_name
 /// and a verified season from the plexformatter::ask_for_season_and_validate,
 /// it will do a dry run of the files by displaying the changes to the user.
-pub fn preview_changes(entries: Vec<(WDirentry, String, String)>, newname: String, season: usize) {
+pub fn preview_changes(entries: Vec<FileEntry>, newname: String, season: usize) {
     let entries_iter = entries.iter();
     for (index, entry) in entries_iter.enumerate() {
         let output = format!(
             "{}{} {} {} {} {}{}{}{}{}{}",
             (index + 1).to_string().bright_cyan(),
             String::from(".").bright_cyan(),
-            entry.1.bright_white(),
+            entry.name.bright_white(),
             String::from("--->").bright_green(),
             newname.trim_end().bright_red(),
             String::from("S").bright_red(),
@@ -228,7 +232,7 @@ pub fn preview_changes(entries: Vec<(WDirentry, String, String)>, newname: Strin
             String::from("E").bright_red(),
             (index + 1).to_string().bright_magenta(),
             String::from(".").bright_white(),
-            entry.2.bright_red()
+            entry.extention.bright_red()
         );
         println!("{output}");
     }
@@ -238,7 +242,7 @@ pub fn preview_changes(entries: Vec<(WDirentry, String, String)>, newname: Strin
 /// a verified name string from the plexformatter::accept_and_validate_new_name
 /// and a verified season from the plexformatter::ask_for_season_and_validate,
 /// It will rename the files in the current directory not changing the directory the files are files are located.
-pub fn rename_files(entries: Vec<(WDirentry, String, String)>, newname: String, season: usize) {
+pub fn rename_files(entries: Vec<FileEntry>, newname: String, season: usize) {
     let entries_iter = entries.iter();
     for (index, entry) in entries_iter.enumerate() {
         let name = format!(
@@ -246,9 +250,9 @@ pub fn rename_files(entries: Vec<(WDirentry, String, String)>, newname: String, 
             newname.trim_end(),
             season,
             index + 1,
-            entry.2
+            entry.extention
         );
-        fs::rename(entry.1.clone(), name).expect("Error renaming files");
+        fs::rename(entry.name.clone(), name).expect("Error renaming files");
     }
 }
 
@@ -261,8 +265,8 @@ pub fn create_plex_format_folder_and_move(newname: String, season: usize) {
     fs::create_dir_all(path).expect("Error creating plex directory");
     let path = format!("{}/Season {}/", newname.trim_end(), season);
     for file in newfiles {
-        let path_copy = format!("{}{}", &path, file.1);
-        fs::rename(file.1, path_copy).expect("Error moving file");
+        let path_copy = format!("{}{}", &path, file.name);
+        fs::rename(file.name, path_copy).expect("Error moving file");
     }
 }
 
