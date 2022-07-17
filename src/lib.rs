@@ -10,7 +10,7 @@ pub struct FileEntry {
     name: String,
     extention: String,
 }
-/// Creates a Vector<(walkdir::DirEntry,String,String)> given a path.
+/// Creates a Vec<FileEntry> given a path.
 /// The touple consists of the DirEntry from the walkdir crate in the 0th field, the name of the file in the 1st field and the extention of the file 2nd field.
 /// The Vector is sorted by the name of the file in a natural sorted order.
 /// The search will only look for files in the current directory, meaning it will not look for files in subdirectories.
@@ -86,7 +86,7 @@ pub fn accept_and_validate_new_name(name: String) -> String {
     buffer
 }
 
-/// The method accepts a Vector<(walkdir::DirEntry,String,String)> created by the plexformatter::create_sorted_file_entries method as a parameter and it will prompt the user to choose a range of entries from the Vector.
+/// The method accepts a Vector<FileEntry> created by the plexformatter::create_sorted_file_entries method as a parameter and it will prompt the user to choose a range of entries from the Vector.
 /// Invalid inputs will not be added to the vector and if all entries are invalid it will return an empty vector.
 /// Valid formats for selecting the entries are:
 /// 1. Number-Number (IE 1-5)
@@ -192,7 +192,7 @@ pub fn ask_for_season_and_validate() -> usize {
 
 /// Given a vector created by the plexformatter::create_sorted_file_entries 
 /// and a vector created by the plexformatter::create_int_vec,
-/// it will create a new Vec<(walkdir::DireEntry, String, String)> that will contain the entries selected by the user defined ranges.
+/// it will create a new Vec<FileEntry> that will contain the entries selected by the user defined ranges.
 /// # Example
 /// ```
 /// let path = std::env::current_dir().unwrap();
