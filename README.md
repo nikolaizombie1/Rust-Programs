@@ -3,18 +3,6 @@
 ## Description
 This tool allows you to batch rename files into a format recognized by Plex Media Server.
 
-## Instalation
-- Go to the [releases](https://github.com/nikolaizombie1/rplexformatter/releases) and download the latest release.
-- Make it executable
-``` sh
-chmod 755 plexformatter
-```
-- Move/Copy the plexformatter executable to .local/bin
-``` sh
-cp plexformatter ~/.local/bin
-```
-Note: Make sure ~/.local/bin is in the path your shell in the case that the executable is not being recognized from the shell.
-
 ## Building from source
 1. Download and install [rustup](https://rustup.rs/).
 2. Clone the github repository
